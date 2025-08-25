@@ -1,4 +1,4 @@
-from config.settings import VALID_POSITIONS
+from config.settings import VALID_POSITIONS, NFL_TEAMS, SALARY_MULTIPLIERS
 
 class Player:
     def __init__(self, name, nfl_team, position, rank=None, salary=None):
@@ -7,8 +7,10 @@ class Player:
             raise TypeError("Name must be a string")
         if not name or not name.strip():
             raise ValueError("Player name cannot be empty")
-        if position is not None and position not in ["QB", "RB", "WR", "TE", "K", "D/ST"]:
+        if position is not None and position not in VALID_POSITIONS:
             raise ValueError(f"Invalid position: {position}")
+        if nfl_team is not None and nfl_team not in NFL_TEAMS:
+            raise ValueError(f"Invalid NFL team: {nfl_team}")
 
         # Rudimentary salary error handling
         if salary is not None:
@@ -50,9 +52,4 @@ class Player:
 
 
     def get_effective_salary(self):
-        multiplier = 1.00
-        if self.roster_status == "practice_squad":
-            multiplier = 0.25
-        elif self.roster_status == "IR":
-            multiplier = 0.5
-        return self.salary * multiplier
+        return self.salary * SALARY_MULTIPLIERS.get(self.roster_status, 1.00)
