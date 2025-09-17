@@ -50,6 +50,23 @@ class Team:
         else:
             raise ValueError(f"Cannot remove player: {player.name} not found in roster!")
 
+
+    def move_player(self, player, new_roster_type):
+        """Move player between roster types"""
+        # Possibly move ownership check to own method, if logic becomes more obtuse
+        if player.fantasy_team != self.name:
+            raise ValueError(f"Cannot move player: {player.name} not on your team!")
+
+        current_roster = player.roster_status
+
+        # Validate roster move
+        if current_roster == new_roster_type:
+            raise ValueError(f"Player {player.name} is already on {new_roster_type} roster")
+
+        roster_max = self._get_roster_max(new_roster_type) 
+        if self.get_roster_size(new_roster_type) >= roster_max:
+            raise ValueError(f"Cannot move player: {new_roster_type} is full")
+
     
     def get_total_salary_used(self):
         total_salary = 0
