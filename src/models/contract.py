@@ -1,4 +1,4 @@
-from datetime import data
+from datetime import date
 from typing import Optional
 from config.settings import LEAGUE_SETTINGS
 
