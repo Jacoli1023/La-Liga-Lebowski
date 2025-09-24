@@ -51,7 +51,7 @@ class Player:
         return self.contract.current_salary if self.contract else 0.0
 
 
-    def get_effective_salary(self):
+    def get_effective_salary(self) -> float:
         """Get salary counting against cap based on roster status"""
         if not self.contract:
             return 0.0
@@ -79,7 +79,7 @@ class Player:
         self.contract = None
         self.fantasy_team = None
         self.roster_status = "free_agent"
-        self.is_holdout = false
+        self.is_holdout = False
         self.holdout_demands = None
 
 
@@ -97,11 +97,89 @@ class Player:
 
         # Check if player finished in top group for their position
         position_top_performers = position_rankings.get(self.position, [])
-        return len(position_top_performers >= threshold and self in position_top_performers[:threshold])
+        return len(position_top_performers) >= threshold and self in position_top_performers[:threshold]
 
 
     def calculate_holdout_demands(self, position_avg_salary: float) -> Optional[float]:
         """Calculate holdout contract demands"""
         if not self.contract:
             return None
-        
+
+        if self.contract.current_salary >= (position_avg_salary * 0.5):
+            return None
+
+        self.holdout_demands = position_avg_salary * 0.75
+        self.is_holdout = True
+        return self.holdout_demands
+
+
+    def resolve_holdout(self, decision: str) -> float:
+        """Resolve holdout with team decision
+
+        Args:
+            decision: 'accept', 'release', or 'reject'
+
+        Returns:
+            Salary change (positive for increase, negative for cap savings)
+        """
+        if not self.is_holdout or not self.holdout_demands:
+            raise ValueError("Player is not currently holding out")
+
+        old_salary = self.contract.current_salary
+
+        if decision == 'accept':
+            # Accept demands, bump salary to 75% of top position average
+            self.contract.current_salary = self.holdout_demands
+            self.is_holdout = False
+            self.holdout_demands = None
+            return self.contract.current_salary - old_salary
+
+        elif decision == 'release':
+            # Release player, they become free agent
+            dead_money = self.contract.calculate_dead_money_penalty()
+            self._become_free_agent()
+            return dead_money # This will be added as dead money to team
+
+        elif decision == 'reject':
+            # Reject demands, player goes to practice squad
+            if self.roster_status != 'practice_squad':
+                self.roster_status = 'practice_squad'
+            return 0.0 # No immediate salary change, but effective salary changes
+
+        else:
+            raise ValueError("Decision must be 'accept', 'release', or 'reject'")
+
+
+    def retire(self):
+        """Retire player from NFL"""
+        self.is_retired = True
+        self.roster_status = 'retired'
+
+
+    def unretire(self):
+        """Un-retire player (Brett Favre)"""
+        if self.is_retired:
+            self.is_retired = False
+            if self.contract and self.fantasy_team:
+                self.roster_status = 'active'
+            else:
+                self.roster_status = 'free_agent'
+
+
+    def is_eligible_for_practice_squad(self) -> bool:
+        """Check if player can be placed on practice squad"""
+        # Only rookies can go on practice squad initially
+        # OR holdout players can be placed there
+        return (self.contract and self.contract.is_rookie) or self.is_holdout
+
+
+    def can_be_extended(self) -> bool:
+        """Check if player's contract can be extended"""
+        return self.contract and self.contract.is_eligible_for_extension()
+
+
+    def extend_contract(self, years: int) -> float:
+        """Extend player's contract"""
+        if not self.can_be_extended():
+            raise ValueError(f"Cannot extend contract for {self.name}")
+        return self.contract.extend_contract(years)

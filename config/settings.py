@@ -14,8 +14,8 @@ LEAGUE_SETTINGS = {
     
     # Financial
     'salary_cap': 1006,
-    'salary_cap_increase_rate': 0.05,
-    'player_salary_increase_rate': 0.20,
+    'salary_cap_increase_rate': 1.05,
+    'player_salary_increase_rate': 1.20,
     
     # Roster limits
     'max_roster_size': 26,
