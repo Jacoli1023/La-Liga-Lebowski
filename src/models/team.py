@@ -113,7 +113,7 @@ class Team:
 
     def get_players_by_position(self, position: str) -> List[Player]:
         """Get all players at a position across all roster types"""
-        player = []
+        players = []
         for roster_list in self.roster.values():
             players.extend([p for p in roster_list if p.position == position])
         return players
