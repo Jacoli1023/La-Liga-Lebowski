@@ -214,3 +214,86 @@ def extend_player(ctx, team_name, player_name, years):
 
     except Exception as e:
         console.print(f"Cannot extend contract: {e}")
+
+
+@cli.command()
+@click.pass_context
+def check_holdouts(ctx):
+    """Check for potential holdouts across the league"""
+    league = ctx.obj['league']
+
+    console.print("Checking for potential holdouts...")
+
+    # Calculate position averages
+    position_averages = league._calculate_position_averages()
+
+    holdouts_found = false
+    for team in league.teams:
+        team_holdouts = []
+
+        for roster_list in team.roster.values():
+            for player in roster_list:
+                if player.contract:
+                    pos_avg = position_averages.get(player.position, 0)
+                    if pos_avg > 0:
+                        # Check if player would hold out
+                        current_salary = player.contract.current_salary
+                        threshold = pos_avg * 0.5
+
+                        if (current_salary < threshold and
+                            player.fantasy_points > 0): # Has performance data
+                            demands = pos_avg * 0.75
+                            team_holdouts.append((player, demands))
+
+        if team_holdouts:
+            holdouts_found = True
+            console.print(f"\n[bold]{team.name} Potential Holdouts:[/bold/")
+
+            table = Table()
+            table.add_column("Player", style="cyan")
+            table.add_column("Position", style="magenta")
+            table.add_column("Current Salary", justify="right", style="red")
+            table.add_column("Demands", justify="right", style="yellow")
+            table.add_column("Increase", justify="right", style="green")
+
+            for player, demands in team_holdouts:
+                increase = demands - player.contract.current_salary
+                table.add_row(
+                        player.name,
+                        player.position,
+                        f"${player.contract.current_salary:.2f}",
+                        f"${demands:.2f}",
+                        f"+${increase:.2f}"
+                )
+
+            console.print(table)
+
+    if not holdouts_found:
+        console.print("No holdout situations detected")
+
+
+@cli.command()
+@click.pass_context
+def simulate_draft(ctx):
+    """Simulate a basic rookie draft"""
+    league = ctx.obj['league']
+
+    if not league.rookie_draft_order:
+        console.print("Draft order not set. Run 'advance_season' first.")
+        return
+
+    console.print("[bold]Rookie Draft Simulation[/bold]")
+    console.print("Draft Order:")
+
+    table = Table()
+    table.add_column("Pick", justify="right", style="cyan")
+    table.add_column("Team", style="magenta")
+    
+    for i, team in enumerate(league.rookie_draft_order, 1):
+        table.add_row(str(i), team.name)
+    
+    console.print(table)
+    console.print("\n(Full draft simulation coming soon!)")
+
+if __name__ == '__main__':
+    cli()
