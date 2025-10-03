@@ -137,7 +137,7 @@ class Team:
 
         # Checks if player has a contract
         if not player.contract:
-            raise ValueError(f"{player.name} must have a contract}")
+            raise ValueError(f"{player.name} must have a contract")
 
         # Check if player is available
         if not player.is_available():

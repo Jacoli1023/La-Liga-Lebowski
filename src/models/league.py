@@ -1,6 +1,7 @@
 from datetime import date
 from typing import List, Dict, Optional
 from collections import defaultdict
+import random
 
 from config.settings import LEAGUE_SETTINGS
 from src.models.team import Team
@@ -54,6 +55,7 @@ class League:
         self._process_holdouts()
 
         # 4. Handle expired contracts
+        self._handle_expired_contracts()
 
         # 5. Validate team salary caps
         self._validate_salary_caps()
@@ -150,4 +152,83 @@ class League:
 
     def _determine_rookie_draft_order(self):
         """Determine rookie draft order using weighted lottery system"""
-        pass
+        # TODO: Move this function into a rookie draft service
+        # Sort teams by record (worst to best)
+        sorted_teams = sorted(self.teams, key=lambda t: getattr(t, 'wins', 0))
+
+        # Lottery for first 6 picks
+        lottery_teams = sorted_teams[:6]
+        lottery_balls = [30, 22, 18, 14, 10, 6] # ping pong balls per team
+
+        lottery_order = []
+        remaining_teams = lottery_teams.copy()
+        remaining_balls = lottery_balls.copy()
+
+        for pick in range(6):
+            total_balls = sum(remaining_balls)
+            winning_number = random.randint(1, total_balls)
+
+            cumulative = 0
+            for i, balls in enumerate(remaining_balls):
+                cumulative += balls
+                if winning_number <= cumulative:
+                    lottery_order.append(remaining_teams[i])
+                    remaining_teams.pop(i)
+                    remaining_balls.pop(i)
+                    break
+
+        # Remaining picks by inverse standings (reigning champ picks last)
+        remaining_picks = sorted_teams[6:]
+        if len(remaining_picks) >= 2:
+            # Champion picks last, runner-up second to last
+            champion = remaining_picks[-1]
+            runner_up = remaining_picks[-2] if len(remaining_picks) > 1 else None
+            middle_teams = remaining_picks[:-2] if len(remaining_picks) > 2 else []
+
+            final_order = middle_teams +([runner_up] if runner_up else []) + [champion]
+        else:
+            final_order = remaining_picks
+
+        self.rookie_draft_order = lottery_order + final_order
+        self.auction_nomination_order = self.rookie_draft_order.copy()
+
+
+    def get_team_by_name(self, name: str) -> Optional[Team]:
+        """Find team by name"""
+        for team in self.teams:
+            if team.name == name:
+                return team
+        return None
+
+
+    def get_free_agents_by_position(self, position: str) -> List[Player]:
+        """Get all free agents at a specific position"""
+        return [p for p in self.free_agents if p.position == position]
+
+
+    def get_league_stats(self) -> Dict:
+        """Get current league statistics"""
+        return {
+                'season_year': self.season_year,
+                'salary_cap': self.current_salary_cap,
+                'total_teams': len(self.teams),
+                'free_agents': len(self.free_agents),
+                'current_phase': self.current_phase,
+                'draft_order': [t.name for t in self.rookie_draft_order]
+        }
+
+
+    def simulate_season_stats(self):
+        """Placeholder for simulating season performance"""
+        for team in self.teams:
+            for roster_list in team.roster.values():
+                for player in roster_list:
+                    # Simulate fantasy points based on position
+                    if player.position == "QB":
+                        player.fantasy_points = random.uniform(150, 400)
+                    elif player.position in ["RB", "WR"]:
+                        player.fantasy_points = random.uniform(50, 300)
+                    elif player.position == "TE":
+                        player.fantasy_points = random.uniform(30, 200)
+                    else:
+                        player.fantasy_points = random.uniform(0, 150)
