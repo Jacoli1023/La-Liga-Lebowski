@@ -88,7 +88,7 @@ def league_status(ctx):
 
         for team in league.teams:
             salary_used = team.get_total_salary_used()
-            cap_space = team.get_remainining_cap()
+            cap_space = team.get_remaining_cap()
             cap_pct = (salary_used / team.salary_cap) * 100
 
             total_players = sum(len(roster) for roster in team.roster.values())
@@ -227,7 +227,7 @@ def check_holdouts(ctx):
     # Calculate position averages
     position_averages = league._calculate_position_averages()
 
-    holdouts_found = false
+    holdouts_found = False
     for team in league.teams:
         team_holdouts = []
 
@@ -247,7 +247,7 @@ def check_holdouts(ctx):
 
         if team_holdouts:
             holdouts_found = True
-            console.print(f"\n[bold]{team.name} Potential Holdouts:[/bold/")
+            console.print(f"\n[bold]{team.name} Potential Holdouts:[/bold]")
 
             table = Table()
             table.add_column("Player", style="cyan")
