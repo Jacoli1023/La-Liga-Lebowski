@@ -63,6 +63,9 @@ class League:
         # 6. Set up draft order
         self._determine_rookie_draft_order()
 
+        self.season_year += 1
+        self.current_phase = "rookie_draft"
+
         # TODO: open bidding for franchise players, unrestricted free agent auction/blind bidding, contract extension deadline, trading deadline, practice squad activation deadline, salary cap removal
 
 
@@ -73,6 +76,10 @@ class League:
                 for player in roster_list:
                     if player.contract:
                         player.advance_contract_year()
+
+                        # Player's contract expired
+                        if player.is_available():
+                            self.free_agents.append(player)
 
 
     def _process_holdouts(self):

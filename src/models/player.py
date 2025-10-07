@@ -43,7 +43,7 @@ class Player:
 
     def is_available(self) -> bool:
         """Check if player is available as free agent"""
-        return self.roster_status == "free_agent" and not (self.is_retired or self.contract)
+        return self.roster_status == "free_agent" and not self.is_retired
 
 
     def get_current_salary(self) -> float:
